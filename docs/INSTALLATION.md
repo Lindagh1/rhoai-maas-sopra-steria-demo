@@ -39,7 +39,7 @@ Si le GPU est déjà occupé, réserver une capacité ou planifier une pause ave
 - Accès depuis le poste à l'API OpenShift, au dashboard et à la gateway ; accès depuis le cluster aux registres d'images et aux poids Hugging Face. Les domaines de téléchargement/redirection doivent être compatibles avec la politique réseau. En environnement déconnecté, préparer des miroirs et adapter les URI/images : le kit ne le fait pas automatiquement.
 - Stockage persistant pour PostgreSQL si hébergé dans le cluster ; backend externe géré possible. Le module prédictif ajoute ses propres besoins de volumes et n'est pas requis pour MaaS.
 - Sur le poste : Git, `oc`, Python avec `venv` et `pip`. Python 3.12 permet d'utiliser aussi le module prédictif. Navigateur récent pour la session humaine ; `curl` pour les exemples curl.
-- Accès au dépôt GitHub **privé**, ou copie fournie par son propriétaire. Le dépôt ne devient pas accessible au client simplement parce qu'on lui communique son URL.
+- Accès réseau au dépôt GitHub **public** : aucun compte GitHub n'est nécessaire pour le consulter ou le cloner.
 
 ### Informations à renseigner avant de commencer
 
@@ -85,7 +85,7 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-Utiliser un clone par sandbox. Ne pas recopier `.state/`, `secrets/` ou le kubeconfig de notre ancienne sandbox. Si `git clone` est refusé, vérifier l'accès au dépôt privé avant de chercher un problème OpenShift.
+Utiliser un clone par sandbox. Ne pas recopier `.state/`, `secrets/` ou le kubeconfig de notre ancienne sandbox. Si `git clone` échoue, vérifier l'URL et l'accès réseau à GitHub avant de chercher un problème OpenShift.
 
 ### 2. Se connecter au bon cluster
 

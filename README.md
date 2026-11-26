@@ -20,7 +20,7 @@ Ce dépôt reprend les projets [rhoai-maas-demo](https://github.com/Lindagh1/rho
 
 Prérequis : RHOAI 3.5.x avec MaaS déjà actif, gateway/TLS et tenant prêts, un GPU NVIDIA disponible, `oc`, Python 3.10+, et un compte administrateur pour la préparation.
 
-Le dépôt est privé : le compte GitHub qui le télécharge doit disposer d'un accès. Les équipes Sopra Steria auront besoin de cet accès ou d'une copie fournie par le propriétaire.
+Le dépôt est public : les équipes Sopra Steria peuvent le consulter et le télécharger sans compte GitHub. Les identifiants de cluster et les clés personnelles restent à fournir sur leur environnement.
 
 ```bash
 git clone https://github.com/Lindagh1/rhoai-maas-sopra-steria-demo.git
