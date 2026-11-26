@@ -1,14 +1,26 @@
 # MaaS RHOAI — démonstration Sopra Steria
 
-Une démonstration de **60 minutes** : publier un véritable LLM natif, autoriser une équipe, attribuer un quota, créer une clé et observer un appel réel puis un refus.
+**L'histoire : une équipe veut utiliser un modèle d'IA sans administrer son serveur. L'équipe plateforme lui donne un accès, une clé et une limite d'utilisation.** La démo montre cette chaîne de bout en bout, puis ce qui se passe quand l'accès est absent, le quota dépassé ou la clé révoquée.
+
+Il s'agit d'une démonstration de partage et de gouvernance d'API d'IA. Le modèle génère une courte réponse en français ; c'est l'accès au service que nous évaluons.
+
+## Comprendre avant d'installer
+
+1. **Je présente à Sopra Steria** : lire [le pitch, l'histoire et le parcours](docs/COMPRENDRE-ET-PRESENTER.md), puis [le conducteur de 60 minutes](docs/DEMO-60-MIN.md).
+2. **Je veux le refaire sur ma sandbox** : suivre [les prérequis et l'installation expliquée](docs/INSTALLATION.md). Deux cas sont distingués : MaaS déjà prêt, ou plateforme à préparer.
+3. **Je veux savoir ce qui marche déjà** : lire [la recette et ses limites](docs/VALIDATION.md).
+
+Le kit installe le modèle et sa gouvernance **sur une plateforme MaaS déjà opérationnelle**. Il n'automatise pas encore l'installation complète de la plateforme sur un cluster vide.
 
 Ce dépôt reprend les projets [rhoai-maas-demo](https://github.com/Lindagh1/rhoai-maas-demo) et [rhoai-3.5-demos](https://github.com/Lindagh1/rhoai-3.5-demos). Le module prédictif de ventes est conservé en complément ; le cœur de cette session répond aux questions MaaS de Sopra Steria.
 
 **Cible client : RHOAI 3.5.0. Sandbox disponible : 3.5.4.** Les résultats réellement obtenus, les écarts de version et les vérifications restantes sont dans [VALIDATION.md](docs/VALIDATION.md). Ces manifestes sont des exemples de démonstration, pas des modèles certifiés par le support Red Hat.
 
-## Démarrer
+## Démarrer sur une plateforme MaaS prête
 
 Prérequis : RHOAI 3.5.x avec MaaS déjà actif, gateway/TLS et tenant prêts, un GPU NVIDIA disponible, `oc`, Python 3.10+, et un compte administrateur pour la préparation.
+
+Le dépôt est privé : le compte GitHub qui le télécharge doit disposer d'un accès. Les équipes Sopra Steria auront besoin de cet accès ou d'une copie fournie par le propriétaire.
 
 ```bash
 git clone https://github.com/Lindagh1/rhoai-maas-sopra-steria-demo.git
