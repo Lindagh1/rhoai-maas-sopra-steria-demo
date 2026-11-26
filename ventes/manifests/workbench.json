@@ -1,0 +1,97 @@
+{
+  "apiVersion": "kubeflow.org/v1",
+  "kind": "Notebook",
+  "metadata": {
+    "name": "atelier-ventes",
+    "namespace": "ventes-demo-repetition",
+    "labels": {
+      "app": "atelier-ventes",
+      "opendatahub.io/dashboard": "true",
+      "app.kubernetes.io/part-of": "ventes-demo"
+    },
+    "annotations": {
+      "notebooks.opendatahub.io/inject-auth": "true",
+      "openshift.io/display-name": "Atelier de prévision",
+      "openshift.io/description": "Apprendre à prévoir les ventes avec un notebook CPU",
+      "opendatahub.io/image-display-name": "Jupyter | Data Science | CPU | Python 3.12",
+      "opendatahub.io/workbench-image": "s2i-generic-data-science-notebook:3.5",
+      "opendatahub.io/hardware-profile-name": "default-profile",
+      "opendatahub.io/hardware-profile-namespace": "redhat-ods-applications",
+      "notebooks.opendatahub.io/last-image-selection": "s2i-generic-data-science-notebook:3.5",
+      "notebooks.opendatahub.io/last-image-version-git-commit-selection": "47efb6c",
+      "opendatahub.io/workbench-image-namespace": "redhat-ods-applications",
+      "opendatahub.io/connections": "ventes-demo-repetition/donnees-du-magasin"
+    }
+  },
+  "spec": {
+    "template": {
+      "spec": {
+        "containers": [
+          {
+            "name": "atelier-ventes",
+            "image": "registry.redhat.io/rhoai/odh-workbench-jupyter-datascience-cpu-py312-rhel9@sha256:b8d61ee1fa27f40677e32160cf34c34bea96a7ce981c32cea80efd387ab831e4",
+            "imagePullPolicy": "IfNotPresent",
+            "workingDir": "/opt/app-root/src",
+            "ports": [
+              {
+                "name": "notebook-port",
+                "containerPort": 8888
+              }
+            ],
+            "env": [
+              {
+                "name": "JUPYTER_NOTEBOOK_PORT",
+                "value": "8888"
+              },
+              {
+                "name": "NOTEBOOK_ARGS",
+                "value": "--ServerApp.token= --ServerApp.password= --ServerApp.base_url=/notebook/ventes-demo-repetition/atelier-ventes --ServerApp.quit_button=False"
+              }
+            ],
+            "resources": {
+              "requests": {
+                "cpu": "1",
+                "memory": "4Gi"
+              },
+              "limits": {
+                "cpu": "2",
+                "memory": "4Gi"
+              }
+            },
+            "volumeMounts": [
+              {
+                "name": "storage",
+                "mountPath": "/opt/app-root/src"
+              },
+              {
+                "name": "shm",
+                "mountPath": "/dev/shm"
+              }
+            ],
+            "envFrom": [
+              {
+                "secretRef": {
+                  "name": "donnees-du-magasin"
+                }
+              }
+            ]
+          }
+        ],
+        "volumes": [
+          {
+            "name": "storage",
+            "persistentVolumeClaim": {
+              "claimName": "atelier-ventes"
+            }
+          },
+          {
+            "name": "shm",
+            "emptyDir": {
+              "medium": "Memory"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

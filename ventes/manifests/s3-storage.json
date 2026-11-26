@@ -1,0 +1,200 @@
+{
+  "apiVersion": "v1",
+  "kind": "List",
+  "items": [
+    {
+      "apiVersion": "v1",
+      "kind": "ConfigMap",
+      "metadata": {
+        "labels": {
+          "app": "s4",
+          "app.kubernetes.io/component": "storage",
+          "app.kubernetes.io/instance": "s4",
+          "app.kubernetes.io/name": "s4",
+          "app.kubernetes.io/part-of": "s4",
+          "component": "s4"
+        },
+        "name": "s4-config",
+        "namespace": "ventes-demo-repetition"
+      },
+      "data": {
+        "AWS_DEFAULT_REGION": "us-east-1",
+        "AWS_S3_ENDPOINT": "http://localhost:7480",
+        "IP": "0.0.0.0",
+        "JWT_EXPIRATION_HOURS": "8",
+        "LOCAL_STORAGE_PATHS": "",
+        "MAX_CONCURRENT_TRANSFERS": "2",
+        "MAX_FILE_SIZE_GB": "20",
+        "PORT": "5000"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "Service",
+      "metadata": {
+        "labels": {
+          "app": "s4",
+          "app.kubernetes.io/component": "storage",
+          "app.kubernetes.io/instance": "s4",
+          "app.kubernetes.io/name": "s4",
+          "app.kubernetes.io/part-of": "s4",
+          "component": "s4"
+        },
+        "name": "s4",
+        "namespace": "ventes-demo-repetition"
+      },
+      "spec": {
+        "ports": [
+          {
+            "name": "s3-api",
+            "port": 7480,
+            "protocol": "TCP",
+            "targetPort": 7480
+          },
+          {
+            "name": "web-ui",
+            "port": 5000,
+            "protocol": "TCP",
+            "targetPort": 5000
+          }
+        ],
+        "selector": {
+          "app": "s4",
+          "app.kubernetes.io/component": "storage",
+          "app.kubernetes.io/instance": "s4",
+          "app.kubernetes.io/name": "s4",
+          "app.kubernetes.io/part-of": "s4",
+          "component": "s4"
+        },
+        "sessionAffinity": "None",
+        "type": "ClusterIP"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "kind": "PersistentVolumeClaim",
+      "metadata": {
+        "labels": {
+          "app": "s4",
+          "app.kubernetes.io/component": "storage",
+          "app.kubernetes.io/instance": "s4",
+          "app.kubernetes.io/name": "s4",
+          "app.kubernetes.io/part-of": "s4",
+          "component": "s4"
+        },
+        "name": "s4-data",
+        "namespace": "ventes-demo-repetition"
+      },
+      "spec": {
+        "accessModes": [
+          "ReadWriteOnce"
+        ],
+        "resources": {
+          "requests": {
+            "storage": "5Gi"
+          }
+        }
+      }
+    },
+    {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "metadata": {
+        "labels": {
+          "app": "s4",
+          "app.kubernetes.io/component": "storage",
+          "app.kubernetes.io/instance": "s4",
+          "app.kubernetes.io/name": "s4",
+          "app.kubernetes.io/part-of": "s4",
+          "component": "s4"
+        },
+        "name": "s4",
+        "namespace": "ventes-demo-repetition"
+      },
+      "spec": {
+        "replicas": 1,
+        "selector": {
+          "matchLabels": {
+            "app": "s4",
+            "app.kubernetes.io/component": "storage",
+            "app.kubernetes.io/instance": "s4",
+            "app.kubernetes.io/name": "s4",
+            "app.kubernetes.io/part-of": "s4",
+            "component": "s4"
+          }
+        },
+        "strategy": {
+          "type": "Recreate"
+        },
+        "template": {
+          "metadata": {
+            "labels": {
+              "app": "s4",
+              "app.kubernetes.io/component": "storage",
+              "app.kubernetes.io/instance": "s4",
+              "app.kubernetes.io/name": "s4",
+              "app.kubernetes.io/part-of": "s4",
+              "component": "s4"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "envFrom": [
+                  {
+                    "configMapRef": {
+                      "name": "s4-config"
+                    }
+                  },
+                  {
+                    "secretRef": {
+                      "name": "s4-credentials"
+                    }
+                  }
+                ],
+                "image": "quay.io/rh-aiservices-bu/s4@sha256:21f17467bd7f5a138773c86d5465170af6cf28b57b5237a738e857a9f5364cdf",
+                "name": "s4",
+                "ports": [
+                  {
+                    "containerPort": 7480,
+                    "name": "s3-api",
+                    "protocol": "TCP"
+                  },
+                  {
+                    "containerPort": 5000,
+                    "name": "web-ui",
+                    "protocol": "TCP"
+                  }
+                ],
+                "resources": {
+                  "limits": {
+                    "cpu": "2",
+                    "memory": "2Gi"
+                  },
+                  "requests": {
+                    "cpu": "250m",
+                    "memory": "512Mi"
+                  }
+                },
+                "volumeMounts": [
+                  {
+                    "mountPath": "/var/lib/ceph/radosgw",
+                    "name": "s4-data"
+                  }
+                ]
+              }
+            ],
+            "volumes": [
+              {
+                "name": "s4-data",
+                "persistentVolumeClaim": {
+                  "claimName": "s4-data"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

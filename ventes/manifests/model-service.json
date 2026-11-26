@@ -1,0 +1,53 @@
+{
+  "apiVersion": "serving.kserve.io/v1beta1",
+  "kind": "InferenceService",
+  "metadata": {
+    "name": "prevision-des-ventes",
+    "namespace": "ventes-demo-repetition",
+    "labels": {
+      "opendatahub.io/dashboard": "true",
+      "app.kubernetes.io/part-of": "ventes-demo"
+    },
+    "annotations": {
+      "openshift.io/display-name": "Prévision des ventes",
+      "openshift.io/description": "Demander combien de glaces vendre selon la météo et la promotion",
+      "opendatahub.io/model-type": "predictive",
+      "opendatahub.io/connections": "donnees-du-magasin",
+      "opendatahub.io/hardware-profile-name": "default-profile",
+      "opendatahub.io/hardware-profile-namespace": "redhat-ods-applications",
+      "modelFormat": "onnx",
+      "serving.kserve.io/deploymentMode": "Standard",
+      "networking.knative.dev/visibility": "cluster-local",
+      "security.opendatahub.io/enable-auth": "false"
+    }
+  },
+  "spec": {
+    "predictor": {
+      "automountServiceAccountToken": false,
+      "minReplicas": 1,
+      "maxReplicas": 1,
+      "model": {
+        "modelFormat": {
+          "name": "onnx",
+          "version": "1"
+        },
+        "runtime": "prevision-des-ventes",
+        "protocolVersion": "v2",
+        "resources": {
+          "requests": {
+            "cpu": "250m",
+            "memory": "512Mi"
+          },
+          "limits": {
+            "cpu": "1",
+            "memory": "1Gi"
+          }
+        },
+        "storage": {
+          "key": "donnees-du-magasin",
+          "path": "modeles/ventes"
+        }
+      }
+    }
+  }
+}

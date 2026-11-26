@@ -1,0 +1,42 @@
+{
+  "apiVersion": "datasciencepipelinesapplications.opendatahub.io/v1",
+  "kind": "DataSciencePipelinesApplication",
+  "metadata": {
+    "name": "dspa",
+    "namespace": "ventes-demo-repetition"
+  },
+  "spec": {
+    "dspVersion": "v2",
+    "apiServer": {
+      "enableOauth": true,
+      "enableSamplePipeline": false
+    },
+    "mlflow": {
+      "integrationMode": "DISABLED"
+    },
+    "database": {
+      "mariaDB": {
+        "deploy": true,
+        "pvcSize": "5Gi"
+      }
+    },
+    "objectStorage": {
+      "externalStorage": {
+        "host": "s4.ventes-demo-repetition.svc.cluster.local",
+        "port": "7480",
+        "scheme": "http",
+        "secure": false,
+        "region": "us-east-1",
+        "bucket": "ventes-demo",
+        "s3CredentialsSecret": {
+          "secretName": "s4-credentials",
+          "accessKey": "AWS_ACCESS_KEY_ID",
+          "secretKey": "AWS_SECRET_ACCESS_KEY"
+        }
+      }
+    },
+    "mlmd": {
+      "deploy": true
+    }
+  }
+}

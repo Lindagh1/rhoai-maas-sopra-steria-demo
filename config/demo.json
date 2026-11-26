@@ -1,0 +1,15 @@
+{
+  "model_namespace": "sopra-maas-models",
+  "tenant_namespace": "models-as-a-service",
+  "aitenant": "models-as-a-service",
+  "gateway_namespace": "openshift-ingress",
+  "gateway_name": "maas-default-gateway",
+  "model_name": "sopra-qwen",
+  "model_uri": "hf://Qwen/Qwen2.5-0.5B-Instruct",
+  "served_model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "group": "sopra-maas-users",
+  "user": "sopra-user",
+  "token_limit": 2000,
+  "low_token_limit": 1,
+  "window": "1m"
+}

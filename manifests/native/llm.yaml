@@ -1,0 +1,38 @@
+apiVersion: serving.kserve.io/v1alpha2
+kind: LLMInferenceService
+metadata:
+  name: sopra-qwen
+  namespace: sopra-maas-models
+  labels:
+    app.kubernetes.io/managed-by: sopra-maas-demo
+    opendatahub.io/dashboard: 'true'
+    opendatahub.io/genai-asset: 'true'
+  annotations:
+    opendatahub.io/model-type: generative
+    openshift.io/display-name: Sopra — Qwen réel, service natif
+spec:
+  model:
+    uri: hf://Qwen/Qwen2.5-0.5B-Instruct
+    name: Qwen/Qwen2.5-0.5B-Instruct
+  replicas: 1
+  router:
+    route: {}
+    gateway:
+      refs:
+      - name: maas-default-gateway
+        namespace: openshift-ingress
+  template:
+    containers:
+    - name: main
+      env:
+      - name: VLLM_ADDITIONAL_ARGS
+        value: --dtype=half --max-model-len=2048 --gpu-memory-utilization=0.60 --enforce-eager
+      resources:
+        requests:
+          cpu: '1'
+          memory: 4Gi
+          nvidia.com/gpu: '1'
+        limits:
+          cpu: '4'
+          memory: 8Gi
+          nvidia.com/gpu: '1'

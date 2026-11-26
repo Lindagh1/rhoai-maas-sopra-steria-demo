@@ -1,0 +1,98 @@
+{
+  "date": "2026-11-26T09:56:46Z",
+  "identity_type": "ServiceAccount (non-admin)",
+  "checks": [
+    {
+      "name": "identité sans administration",
+      "passed": true
+    },
+    {
+      "name": "création clé avec expiration et subscription",
+      "passed": true,
+      "http": 201
+    },
+    {
+      "name": "catalogue limité au modèle autorisé",
+      "passed": true,
+      "http": 200,
+      "models": [
+        "publishers/sopra-maas-models/models/Qwen/Qwen2.5-0.5B-Instruct"
+      ]
+    },
+    {
+      "name": "inférence réelle",
+      "passed": true,
+      "http": 200,
+      "answer": "Une API (Application Programming Interface) est un outil qui permet de communiquer entre des applications différentes, facilitant ainsi l'interopérabilité et la flexibilité dans le développement d'applications.",
+      "usage": {
+        "prompt_tokens": 44,
+        "total_tokens": 87,
+        "completion_tokens": 43,
+        "prompt_tokens_details": null
+      },
+      "headers": {}
+    },
+    {
+      "name": "absence de clé refusée",
+      "passed": true,
+      "http": 401
+    },
+    {
+      "name": "clé dédiée au petit quota",
+      "passed": true,
+      "http": 201
+    },
+    {
+      "name": "quota épuisé HTTP 429",
+      "passed": true,
+      "http": [
+        200,
+        429
+      ]
+    },
+    {
+      "name": "refus auth-only",
+      "passed": true,
+      "key_creation_http": 400,
+      "error": {
+        "code": "invalid_subscription",
+        "error": "Unable to resolve a subscription for this API key"
+      }
+    },
+    {
+      "name": "refus quota-only",
+      "passed": true,
+      "key_creation_http": 201,
+      "inference_http": 403
+    },
+    {
+      "name": "refus no-access",
+      "passed": true,
+      "key_creation_http": 400,
+      "error": {
+        "code": "invalid_subscription",
+        "error": "Unable to resolve a subscription for this API key"
+      }
+    },
+    {
+      "name": "révocation de sa propre clé",
+      "passed": true,
+      "http": 200
+    },
+    {
+      "name": "ancienne clé inutilisable",
+      "passed": true,
+      "http": 403
+    },
+    {
+      "name": "nouvelle clé distincte",
+      "passed": true,
+      "http": 201
+    },
+    {
+      "name": "inférence après rotation",
+      "passed": true,
+      "http": 200
+    }
+  ]
+}

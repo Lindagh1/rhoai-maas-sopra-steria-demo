@@ -1,0 +1,41 @@
+# TEMPLATE, non appliqué par setup.sh. Adapter endpoint, secret et modèle cible.
+# Ce raccordement n'a pas été testé sur un provider externe dans cette recette.
+apiVersion: inference.opendatahub.io/v1alpha1
+kind: ExternalProvider
+metadata:
+  name: sopra-http-provider
+  namespace: sopra-maas-models
+spec:
+  provider: openai
+  endpoint: https://provider.example.invalid
+  auth:
+    type: apikey
+    secretRef:
+      name: sopra-provider-credentials
+---
+apiVersion: inference.opendatahub.io/v1alpha1
+kind: ExternalModel
+metadata:
+  name: sopra-http-model
+  namespace: sopra-maas-models
+spec:
+  modelName: sopra-http-model
+  externalProviderRefs:
+    - ref:
+        name: sopra-http-provider
+      targetModel: replace-with-served-model-id
+      apiFormat: openai-chat
+      path: /v1/chat/completions
+---
+apiVersion: maas.opendatahub.io/v1alpha1
+kind: MaaSModelRef
+metadata:
+  name: sopra-http-model
+  namespace: sopra-maas-models
+spec:
+  modelRef:
+    kind: ExternalModel
+    name: sopra-http-model
+# Ajouter ensuite ce MaaSModelRef aux deux objets de gouvernance.
+# Pour un backend HTTP interne, vérifier port, auth et réglages TLS de la
+# version installée ; ne pas supposer que cette variante HTTPS suffit.

@@ -1,0 +1,37 @@
+{
+  "apiVersion": "v1",
+  "kind": "Secret",
+  "metadata": {
+    "name": "donnees-du-magasin",
+    "namespace": "ventes-demo-repetition",
+    "labels": {
+      "opendatahub.io/dashboard": "true",
+      "app.kubernetes.io/part-of": "ventes-demo",
+      "opendatahub.io/managed": "true"
+    },
+    "annotations": {
+      "openshift.io/display-name": "Données du magasin",
+      "openshift.io/description": "Lire les ventes et conserver les modèles et les prévisions",
+      "opendatahub.io/connection-type-ref": "s3",
+      "opendatahub.io/connection-type-protocol": "s3",
+      "serving.kserve.io/s3-endpoint": "s4.ventes-demo-repetition.svc.cluster.local:7480",
+      "serving.kserve.io/s3-usehttps": "0",
+      "serving.kserve.io/s3-region": "us-east-1",
+      "serving.kserve.io/s3-usevirtualbucket": "false",
+      "opendatahub.io/connection-type": "s3"
+    }
+  },
+  "type": "Opaque",
+  "dataSource": {
+    "existingSecret": "s4-credentials",
+    "copiedKeys": [
+      "AWS_ACCESS_KEY_ID",
+      "AWS_SECRET_ACCESS_KEY"
+    ],
+    "configuration": {
+      "AWS_S3_ENDPOINT": "http://s4.ventes-demo-repetition.svc.cluster.local:7480",
+      "AWS_DEFAULT_REGION": "us-east-1",
+      "AWS_S3_BUCKET": "ventes-demo"
+    }
+  }
+}

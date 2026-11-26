@@ -1,0 +1,331 @@
+# PIPELINE DEFINITION
+# Name: prevoir-les-ventes
+# Description: Démo pédagogique CPU : préparer, entraîner, évaluer et prévoir les ventes de glaces.
+# Inputs:
+#    promotion: int [Default: 1.0]
+#    temperature: float [Default: 24.0]
+#    weekend: int [Default: 1.0]
+components:
+  comp-entrainer:
+    executorLabel: exec-entrainer
+    inputDefinitions:
+      artifacts:
+        donnees:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+    outputDefinitions:
+      artifacts:
+        modele:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+  comp-evaluer:
+    executorLabel: exec-evaluer
+    inputDefinitions:
+      artifacts:
+        donnees:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        modele:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+    outputDefinitions:
+      artifacts:
+        qualite:
+          artifactType:
+            schemaTitle: system.Metrics
+            schemaVersion: 0.0.1
+      parameters:
+        Output:
+          parameterType: NUMBER_DOUBLE
+  comp-preparer:
+    executorLabel: exec-preparer
+    outputDefinitions:
+      artifacts:
+        donnees:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+  comp-prevoir:
+    executorLabel: exec-prevoir
+    inputDefinitions:
+      artifacts:
+        modele:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+      parameters:
+        mae_test:
+          parameterType: NUMBER_DOUBLE
+        promotion:
+          parameterType: NUMBER_INTEGER
+        temperature:
+          parameterType: NUMBER_DOUBLE
+        weekend:
+          parameterType: NUMBER_INTEGER
+    outputDefinitions:
+      artifacts:
+        prevision:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+      parameters:
+        Output:
+          parameterType: NUMBER_INTEGER
+deploymentSpec:
+  executors:
+    exec-entrainer:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - entrainer
+        command:
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef entrainer(donnees: Input[Dataset], modele: Output[Model]):\n\
+          \    import pickle\n    import pandas as pd\n    from sklearn.linear_model\
+          \ import LinearRegression\n    df = pd.read_csv(donnees.path).sort_values('date').reset_index(drop=True)\n\
+          \    colonnes = ['temperature_prevue', 'weekend', 'promotion']\n    train\
+          \ = df.iloc[:168]\n    reg = LinearRegression().fit(train[colonnes], train.ventes)\n\
+          \    with open(modele.path, 'wb') as f:\n        pickle.dump({'model': reg,\
+          \ 'baseline': float(train.ventes.mean()), 'features': colonnes}, f)\n  \
+          \  modele.metadata['algorithme'] = 'LinearRegression'\n    modele.metadata['jours_apprentissage']\
+          \ = 168\n    print('R\xE9gression lin\xE9aire entra\xEEn\xE9e sur les 168\
+          \ premiers jours.')\n\n"
+        image: registry.redhat.io/rhoai/odh-workbench-jupyter-datascience-cpu-py312-rhel9@sha256:b8d61ee1fa27f40677e32160cf34c34bea96a7ce981c32cea80efd387ab831e4
+        resources:
+          cpuLimit: 1.0
+          cpuRequest: 0.25
+          memoryLimit: 1.073741824
+          memoryRequest: 0.536870912
+          resourceCpuLimit: '1'
+          resourceCpuRequest: 250m
+          resourceMemoryLimit: 1Gi
+          resourceMemoryRequest: 512Mi
+    exec-evaluer:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - evaluer
+        command:
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef evaluer(donnees: Input[Dataset], modele: Input[Model], qualite:\
+          \ Output[Metrics]) -> float:\n    import pickle\n    import numpy as np\n\
+          \    import pandas as pd\n    from sklearn.metrics import mean_absolute_error\n\
+          \    # Only load the artifact produced by our own training step.\n    with\
+          \ open(modele.path, 'rb') as f: bundle = pickle.load(f)\n    test = pd.read_csv(donnees.path).sort_values('date').reset_index(drop=True).iloc[168:]\n\
+          \    mae = float(mean_absolute_error(test.ventes, bundle['model'].predict(test[bundle['features']])))\n\
+          \    baseline = float(mean_absolute_error(test.ventes, np.full(len(test),\
+          \ bundle['baseline'])))\n    qualite.log_metric('mae_modele', mae)\n   \
+          \ qualite.log_metric('mae_reference', baseline)\n    qualite.log_metric('jours_test',\
+          \ len(test))\n    print(f'Erreur moyenne : mod\xE8le {mae:.1f} glaces/jour\
+          \ ; r\xE9f\xE9rence {baseline:.1f}.')\n    return mae\n\n"
+        image: registry.redhat.io/rhoai/odh-workbench-jupyter-datascience-cpu-py312-rhel9@sha256:b8d61ee1fa27f40677e32160cf34c34bea96a7ce981c32cea80efd387ab831e4
+        resources:
+          cpuLimit: 1.0
+          cpuRequest: 0.25
+          memoryLimit: 1.073741824
+          memoryRequest: 0.536870912
+          resourceCpuLimit: '1'
+          resourceCpuRequest: 250m
+          resourceMemoryLimit: 1Gi
+          resourceMemoryRequest: 512Mi
+    exec-preparer:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - preparer
+        command:
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef preparer(donnees: Output[Dataset]):\n    import numpy as np\n\
+          \    import pandas as pd\n    rng = np.random.default_rng(42)\n    dates\
+          \ = pd.date_range('2026-01-01', periods=210)\n    temperature = np.round(19\
+          \ + 8 * np.sin(np.arange(210) / 210 * np.pi) + rng.normal(0, 3, 210), 1)\n\
+          \    weekend = (dates.dayofweek >= 5).astype(int)\n    promotion = rng.binomial(1,\
+          \ 0.25, 210)\n    ventes = np.maximum(0, np.rint(40 + 4 * temperature +\
+          \ 35 * weekend + 45 * promotion + rng.normal(0, 8, 210))).astype(int)\n\
+          \    pd.DataFrame({'date': dates.strftime('%Y-%m-%d'), 'temperature_prevue':\
+          \ temperature,\n                  'weekend': weekend, 'promotion': promotion,\
+          \ 'ventes': ventes}).to_csv(donnees.path, index=False)\n    donnees.metadata['origine']\
+          \ = 'Donnees synthetiques, graine 42'\n    print('210 jours synth\xE9tiques\
+          \ pr\xE9par\xE9s : 168 pour apprendre, 42 pour v\xE9rifier.')\n\n"
+        image: registry.redhat.io/rhoai/odh-workbench-jupyter-datascience-cpu-py312-rhel9@sha256:b8d61ee1fa27f40677e32160cf34c34bea96a7ce981c32cea80efd387ab831e4
+        resources:
+          cpuLimit: 1.0
+          cpuRequest: 0.25
+          memoryLimit: 1.073741824
+          memoryRequest: 0.536870912
+          resourceCpuLimit: '1'
+          resourceCpuRequest: 250m
+          resourceMemoryLimit: 1Gi
+          resourceMemoryRequest: 512Mi
+    exec-prevoir:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - prevoir
+        command:
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef prevoir(modele: Input[Model], mae_test: float, temperature: float,\
+          \ weekend: int,\n            promotion: int, prevision: Output[Dataset])\
+          \ -> int:\n    import pickle\n    import pandas as pd\n    if weekend not\
+          \ in (0, 1) or promotion not in (0, 1):\n        raise ValueError('weekend\
+          \ et promotion doivent valoir 0 ou 1')\n    with open(modele.path, 'rb')\
+          \ as f: bundle = pickle.load(f)\n    demain = pd.DataFrame([{'temperature_prevue':\
+          \ temperature, 'weekend': weekend, 'promotion': promotion}])\n    quantite\
+          \ = max(0, round(float(bundle['model'].predict(demain[bundle['features']])[0])))\n\
+          \    pd.DataFrame([{'date_scenario': '2026-08-01', 'temperature_prevue':\
+          \ temperature,\n                  'weekend': weekend, 'promotion': promotion,\
+          \ 'ventes_prevues': quantite,\n                  'mae_test': mae_test}]).to_csv(prevision.path,\
+          \ index=False)\n    prevision.metadata['ventes_prevues'] = quantite\n  \
+          \  print(f'PR\xC9VISION : {quantite} glaces. Erreur moyenne du test : {mae_test:.1f}.')\n\
+          \    print('Donn\xE9es synth\xE9tiques ; cette erreur moyenne n\u2019est\
+          \ pas un intervalle de confiance.')\n    return quantite\n\n"
+        image: registry.redhat.io/rhoai/odh-workbench-jupyter-datascience-cpu-py312-rhel9@sha256:b8d61ee1fa27f40677e32160cf34c34bea96a7ce981c32cea80efd387ab831e4
+        resources:
+          cpuLimit: 1.0
+          cpuRequest: 0.25
+          memoryLimit: 1.073741824
+          memoryRequest: 0.536870912
+          resourceCpuLimit: '1'
+          resourceCpuRequest: 250m
+          resourceMemoryLimit: 1Gi
+          resourceMemoryRequest: 512Mi
+pipelineInfo:
+  description: "D\xE9mo p\xE9dagogique CPU : pr\xE9parer, entra\xEEner, \xE9valuer\
+    \ et pr\xE9voir les ventes de glaces."
+  name: prevoir-les-ventes
+root:
+  dag:
+    tasks:
+      entrainer:
+        cachingOptions: {}
+        componentRef:
+          name: comp-entrainer
+        dependentTasks:
+        - preparer
+        inputs:
+          artifacts:
+            donnees:
+              taskOutputArtifact:
+                outputArtifactKey: donnees
+                producerTask: preparer
+        taskInfo:
+          name: "2 Entra\xEEner le mod\xE8le"
+      evaluer:
+        cachingOptions: {}
+        componentRef:
+          name: comp-evaluer
+        dependentTasks:
+        - entrainer
+        - preparer
+        inputs:
+          artifacts:
+            donnees:
+              taskOutputArtifact:
+                outputArtifactKey: donnees
+                producerTask: preparer
+            modele:
+              taskOutputArtifact:
+                outputArtifactKey: modele
+                producerTask: entrainer
+        taskInfo:
+          name: "3 \xC9valuer la qualit\xE9"
+      preparer:
+        cachingOptions: {}
+        componentRef:
+          name: comp-preparer
+        taskInfo:
+          name: "1 Pr\xE9parer les donn\xE9es"
+      prevoir:
+        cachingOptions: {}
+        componentRef:
+          name: comp-prevoir
+        dependentTasks:
+        - entrainer
+        - evaluer
+        inputs:
+          artifacts:
+            modele:
+              taskOutputArtifact:
+                outputArtifactKey: modele
+                producerTask: entrainer
+          parameters:
+            mae_test:
+              taskOutputParameter:
+                outputParameterKey: Output
+                producerTask: evaluer
+            promotion:
+              componentInputParameter: promotion
+            temperature:
+              componentInputParameter: temperature
+            weekend:
+              componentInputParameter: weekend
+        taskInfo:
+          name: "4 Pr\xE9voir demain"
+  inputDefinitions:
+    parameters:
+      promotion:
+        defaultValue: 1.0
+        isOptional: true
+        parameterType: NUMBER_INTEGER
+      temperature:
+        defaultValue: 24.0
+        isOptional: true
+        parameterType: NUMBER_DOUBLE
+      weekend:
+        defaultValue: 1.0
+        isOptional: true
+        parameterType: NUMBER_INTEGER
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.16.0

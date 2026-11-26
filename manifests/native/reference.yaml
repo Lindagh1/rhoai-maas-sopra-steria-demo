@@ -1,0 +1,208 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sopra-maas-models
+  labels:
+    app.kubernetes.io/managed-by: sopra-maas-demo
+    opendatahub.io/dashboard: 'true'
+    maas.opendatahub.io/gateway-access: 'true'
+---
+apiVersion: user.openshift.io/v1
+kind: Group
+metadata:
+  name: sopra-maas-users
+  labels:
+    app.kubernetes.io/managed-by: sopra-maas-demo
+users:
+- sopra-user
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: consumer
+  labels:
+    app.kubernetes.io/managed-by: sopra-maas-demo
+  namespace: sopra-maas-models
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: auth-only
+  labels:
+    app.kubernetes.io/managed-by: sopra-maas-demo
+  namespace: sopra-maas-models
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: quota-only
+  labels:
+    app.kubernetes.io/managed-by: sopra-maas-demo
+  namespace: sopra-maas-models
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: no-access
+  labels:
+    app.kubernetes.io/managed-by: sopra-maas-demo
+  namespace: sopra-maas-models
+---
+apiVersion: serving.kserve.io/v1alpha2
+kind: LLMInferenceService
+metadata:
+  name: sopra-qwen
+  namespace: sopra-maas-models
+  labels:
+    app.kubernetes.io/managed-by: sopra-maas-demo
+    opendatahub.io/dashboard: 'true'
+    opendatahub.io/genai-asset: 'true'
+  annotations:
+    opendatahub.io/model-type: generative
+    openshift.io/display-name: Sopra — Qwen réel, service natif
+spec:
+  model:
+    name: Qwen/Qwen2.5-0.5B-Instruct
+    uri: hf://Qwen/Qwen2.5-0.5B-Instruct
+  replicas: 1
+  router:
+    route: {}
+    gateway:
+      refs:
+      - name: maas-default-gateway
+        namespace: openshift-ingress
+  template:
+    containers:
+    - name: main
+      env:
+      - name: VLLM_ADDITIONAL_ARGS
+        value: --dtype=half --max-model-len=2048 --gpu-memory-utilization=0.60 --enforce-eager
+      resources:
+        requests:
+          cpu: '1'
+          memory: 4Gi
+          nvidia.com/gpu: '1'
+        limits:
+          cpu: '4'
+          memory: 8Gi
+          nvidia.com/gpu: '1'
+---
+apiVersion: maas.opendatahub.io/v1alpha1
+kind: MaaSModelRef
+metadata:
+  name: sopra-qwen
+  labels:
+    app.kubernetes.io/managed-by: sopra-maas-demo
+  namespace: sopra-maas-models
+spec:
+  modelRef:
+    kind: LLMInferenceService
+    name: sopra-qwen
+---
+apiVersion: maas.opendatahub.io/v1alpha1
+kind: MaaSAuthPolicy
+metadata:
+  name: sopra-access
+  labels:
+    app.kubernetes.io/managed-by: sopra-maas-demo
+  namespace: models-as-a-service
+spec:
+  subjects:
+    groups:
+    - name: sopra-maas-users
+    users:
+    - system:serviceaccount:sopra-maas-models:consumer
+  modelRefs:
+  - name: sopra-qwen
+    namespace: sopra-maas-models
+---
+apiVersion: maas.opendatahub.io/v1alpha1
+kind: MaaSSubscription
+metadata:
+  name: sopra-standard
+  labels:
+    app.kubernetes.io/managed-by: sopra-maas-demo
+  namespace: models-as-a-service
+spec:
+  owner:
+    groups:
+    - name: sopra-maas-users
+    users:
+    - system:serviceaccount:sopra-maas-models:consumer
+  priority: 10
+  modelRefs:
+  - name: sopra-qwen
+    namespace: sopra-maas-models
+    tokenRateLimits:
+    - limit: 2000
+      window: 1m
+---
+apiVersion: maas.opendatahub.io/v1alpha1
+kind: MaaSSubscription
+metadata:
+  name: sopra-low
+  labels:
+    app.kubernetes.io/managed-by: sopra-maas-demo
+  namespace: models-as-a-service
+spec:
+  owner:
+    groups:
+    - name: sopra-maas-users
+    users:
+    - system:serviceaccount:sopra-maas-models:consumer
+  priority: 1
+  modelRefs:
+  - name: sopra-qwen
+    namespace: sopra-maas-models
+    tokenRateLimits:
+    - limit: 1
+      window: 1m
+---
+apiVersion: maas.opendatahub.io/v1alpha1
+kind: MaaSAuthPolicy
+metadata:
+  name: sopra-auth-only
+  labels:
+    app.kubernetes.io/managed-by: sopra-maas-demo
+  namespace: models-as-a-service
+spec:
+  subjects:
+    users:
+    - system:serviceaccount:sopra-maas-models:auth-only
+  modelRefs:
+  - name: sopra-qwen
+    namespace: sopra-maas-models
+---
+apiVersion: maas.opendatahub.io/v1alpha1
+kind: MaaSSubscription
+metadata:
+  name: sopra-quota-only
+  labels:
+    app.kubernetes.io/managed-by: sopra-maas-demo
+  namespace: models-as-a-service
+spec:
+  owner:
+    users:
+    - system:serviceaccount:sopra-maas-models:quota-only
+  modelRefs:
+  - name: sopra-qwen
+    namespace: sopra-maas-models
+    tokenRateLimits:
+    - limit: 2000
+      window: 1m
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sopra-model-view
+  labels:
+    app.kubernetes.io/managed-by: sopra-maas-demo
+  namespace: sopra-maas-models
+subjects:
+- kind: Group
+  name: sopra-maas-users
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io

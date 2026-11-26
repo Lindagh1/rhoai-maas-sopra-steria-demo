@@ -1,0 +1,12 @@
+# TEMPLATE TP, non appliqué. La gateway dédiée doit exister avant ce tenant.
+# Aucun SLA ni isolation réseau ne sont déduits de ce seul manifeste.
+apiVersion: maas.opendatahub.io/v1alpha1
+kind: AITenant
+metadata:
+  name: sopra-lab
+  namespace: ai-tenants
+spec:
+  gateway:
+    name: sopra-lab-gateway
+# Lire status.tenantNamespace et status.gatewayRef après réconciliation.
+# Accorder l'administration par RoleBinding ; pas par spec.rbac.
