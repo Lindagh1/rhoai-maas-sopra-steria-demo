@@ -103,6 +103,7 @@ Le premier indique le compte préparateur ; le second doit désigner la sandbox 
 Ouvrir `config/demo.json` et renseigner :
 
 - `model_namespace` : nouveau projet dédié au modèle, par défaut `sopra-maas-models`.
+- `model_name` : nom du déploiement et de sa publication, par défaut `sopra-qwen` ; le conserver pour suivre le conducteur sans adaptation.
 - `tenant_namespace` et `aitenant` : gouvernance existante, par défaut `models-as-a-service`.
 - `gateway_name` et `gateway_namespace` : gateway MaaS réellement associée à ce tenant.
 - `user` : nom exact du compte humain transmis par OpenShift OAuth.
